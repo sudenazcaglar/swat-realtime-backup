@@ -8,33 +8,60 @@ import { SpeedControl } from "../components/Dashboard/SpeedControl";
 import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
 // import { useSimulatedData } from '../hooks/useSimulatedData';
 
+// HTTP taban URL – istersen .env ile override edebilirsin
+const API_BASE =
+  (import.meta as any).env?.VITE_BACKEND_HTTP_URL ?? "http://localhost:8000";
+
 export const Overview: React.FC = () => {
   const [speed, setSpeed] = useState(1);
   const [isPlaying, setIsPlaying] = useState(true);
+
   // const { sensors, events, heatmapData } = useSimulatedData(isPlaying ? speed : 0);
   const { sensors, events, heatmapData } = useSwatRealtimeData(
     isPlaying ? speed : 0
   );
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
+  const handlePlayPause = async () => {
+    const next = !isPlaying;
+    setIsPlaying(next);
 
-  const handleSpeedChange = (newSpeed: number) => {
-    setSpeed(newSpeed);
-    if (!isPlaying) {
-      setIsPlaying(true);
+    try {
+      const endpoint = next ? "/control/play" : "/control/pause";
+      await fetch(`${API_BASE}${endpoint}`, { method: "POST" });
+    } catch (err) {
+      console.error("[ReplayControl] play/pause error", err);
     }
   };
 
-  // Group sensors for different charts
+  const handleSpeedChange = async (newSpeed: number) => {
+    setSpeed(newSpeed);
+
+    // Hız değişince otomatik play'e geçmek istiyoruz
+    const wasPaused = !isPlaying;
+    if (wasPaused) {
+      setIsPlaying(true);
+    }
+
+    try {
+      await fetch(`${API_BASE}/control/speed/${newSpeed}`, {
+        method: "POST",
+      });
+
+      // Eğer önceden pause'da ise, backend'i de play'e al
+      if (wasPaused) {
+        await fetch(`${API_BASE}/control/play`, { method: "POST" });
+      }
+    } catch (err) {
+      console.error("[ReplayControl] speed change error", err);
+    }
+  };
+
+  // Grafikler için sensör grupları
   const flowSensors = sensors.filter((s) =>
-    ["flow", "conductivity"].includes(s.id)
+    ["fit101", "ait201"].includes(s.id)
   );
-  const systemSensors = sensors.filter((s) =>
-    ["temp", "humidity"].includes(s.id)
-  );
-  const anomalySensors = sensors.filter((s) => s.id === "anomaly");
+  const systemSensors = sensors.filter((s) => ["lit101"].includes(s.id));
+  const anomalySensors = sensors.filter((s) => s.id === "anomaly_score");
 
   return (
     <div className="space-y-6">
@@ -60,7 +87,6 @@ export const Overview: React.FC = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <TrendChart title="Flow Rate & Conductivity" sensors={flowSensors} />
-
         <TrendChart title="Temperature & Humidity" sensors={systemSensors} />
       </div>
 
