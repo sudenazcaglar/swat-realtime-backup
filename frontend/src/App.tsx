@@ -1,60 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { Layout } from './components/Layout';
-import { Overview } from './pages/Overview';
-import { Control } from './pages/Control';
-import { PlaceholderPage } from './pages/PlaceholderPage';
-import { NavigationItem } from './types';
+import { useEffect, useState } from "react";
+import { Layout } from "./components/Layout";
+import { Overview } from "./pages/Overview";
+import { Control } from "./pages/Control";
+import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { NavigationItem } from "./types";
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<NavigationItem>('overview');
+  const [currentPage, setCurrentPage] = useState<NavigationItem>("overview");
+  const [replayTimeLabel, setReplayTimeLabel] = useState<string | undefined>();
 
-  // Update document title based on current page
+  // Sayfa başlığını güncelle
   useEffect(() => {
-    const titles = {
-      overview: 'SWaT Digital Twin - Overview',
-      control: 'SWaT Digital Twin - Control',
-      logs: 'SWaT Digital Twin - Logs',
-      xai: 'SWaT Digital Twin - XAI',
-      chat: 'SWaT Digital Twin - Chat',
+    const titles: Record<NavigationItem, string> = {
+      overview: "SWaT Digital Twin - Overview",
+      control: "SWaT Digital Twin - Control",
+      logs: "SWaT Digital Twin - Logs",
+      xai: "SWaT Digital Twin - XAI",
+      chat: "SWaT Digital Twin - Chat",
     };
-    
-    document.title = titles[currentPage] || 'SWaT Digital Twin';
+
+    document.title = titles[currentPage] ?? "SWaT Digital Twin";
   }, [currentPage]);
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'overview':
-        return <Overview />;
-      case 'control':
+      case "overview":
+        return <Overview onTimeLabelChange={setReplayTimeLabel} />;
+
+      case "control":
         return <Control />;
-      case 'logs':
+
+      case "logs":
         return (
           <PlaceholderPage
-            title="System Logs"
-            description="This section will contain detailed system logs, audit trails, and historical data analysis for the water treatment plant."
+            title="Logs"
+            description="Log ekranı henüz implement edilmedi. Burada sistem olay kayıtları ve geçmiş anomaliler gösterilecek."
           />
         );
-      case 'xai':
+
+      case "xai":
         return (
           <PlaceholderPage
             title="Explainable AI"
-            description="This section will provide AI model explanations, feature importance analysis, and decision reasoning for anomaly detection."
+            description="XAI ekranı henüz implement edilmedi. Burada model açıklamaları ve feature importance görselleştirilecek."
           />
         );
-      case 'chat':
+
+      case "chat":
         return (
           <PlaceholderPage
-            title="AI Assistant"
-            description="This section will feature an intelligent chatbot for interacting with the system, asking questions about plant operations, and getting insights."
+            title="Chat"
+            description="Chat ekranı henüz implement edilmedi. Burada operatör ile etkileşimli sohbet arayüzü yer alacak."
           />
         );
+
       default:
-        return <Overview />;
+        return <Overview onTimeLabelChange={setReplayTimeLabel} />;
     }
   };
 
   return (
-    <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
+    <Layout
+      currentPage={currentPage}
+      onNavigate={setCurrentPage}
+      timeLabel={replayTimeLabel}
+    >
       {renderPage()}
     </Layout>
   );

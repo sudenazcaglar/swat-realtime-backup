@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MetricCard } from "../components/Dashboard/MetricCard";
 import { TrendChart } from "../components/Dashboard/TrendChart";
 import { AnomalyChart } from "../components/Dashboard/AnomalyChart";
@@ -6,20 +6,47 @@ import { Heatmap } from "../components/Dashboard/Heatmap";
 import { EventLog } from "../components/Dashboard/EventLog";
 import { SpeedControl } from "../components/Dashboard/SpeedControl";
 import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
-// import { useSimulatedData } from '../hooks/useSimulatedData';
+// import { useSimulatedData } from "../hooks/useSimulatedData";
 
-// HTTP taban URL – istersen .env ile override edebilirsin
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_HTTP_URL ?? "http://localhost:8000";
 
-export const Overview: React.FC = () => {
+const formatTimestamp = (ts: string | null) => {
+  if (!ts) return "—";
+
+  const date = new Date(ts);
+
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+};
+
+interface OverviewProps {
+  onTimeLabelChange?: (label: string | undefined) => void;
+}
+
+export const Overview: React.FC<OverviewProps> = ({ onTimeLabelChange }) => {
   const [speed, setSpeed] = useState(1);
   const [isPlaying, setIsPlaying] = useState(true);
 
-  // const { sensors, events, heatmapData } = useSimulatedData(isPlaying ? speed : 0);
-  const { sensors, events, heatmapData } = useSwatRealtimeData(
-    isPlaying ? speed : 0
-  );
+  const { sensors, events, heatmapData, currentTimestamp } =
+    useSwatRealtimeData(isPlaying ? speed : 0);
+
+  // Replay timestamp'i üst seviyeye bildir (Layout sağ üst için)
+  useEffect(() => {
+    if (onTimeLabelChange) {
+      const label =
+        currentTimestamp != null
+          ? formatTimestamp(currentTimestamp)
+          : undefined;
+      onTimeLabelChange(label);
+    }
+  }, [currentTimestamp, onTimeLabelChange]);
 
   const handlePlayPause = async () => {
     const next = !isPlaying;
@@ -36,7 +63,6 @@ export const Overview: React.FC = () => {
   const handleSpeedChange = async (newSpeed: number) => {
     setSpeed(newSpeed);
 
-    // Hız değişince otomatik play'e geçmek istiyoruz
     const wasPaused = !isPlaying;
     if (wasPaused) {
       setIsPlaying(true);
@@ -47,12 +73,61 @@ export const Overview: React.FC = () => {
         method: "POST",
       });
 
-      // Eğer önceden pause'da ise, backend'i de play'e al
       if (wasPaused) {
         await fetch(`${API_BASE}/control/play`, { method: "POST" });
       }
     } catch (err) {
       console.error("[ReplayControl] speed change error", err);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      // Baştan başlat
+      await fetch(`${API_BASE}/control/jump/0`, { method: "POST" });
+
+      // Pause durumundaysa otomatik play'e al
+      if (!isPlaying) {
+        setIsPlaying(true);
+        await fetch(`${API_BASE}/control/play`, { method: "POST" });
+      }
+    } catch (err) {
+      console.error("[ReplayControl] reset error", err);
+    }
+  };
+
+  const handleRewind = async () => {
+    try {
+      // 1) Mevcut index'i al
+      const res = await fetch(`${API_BASE}/status`);
+      const status = await res.json();
+      const currentIndex: number = status.current_index ?? 0;
+
+      // 2) Hıza göre geriye gidilecek süre (saniye)
+      let backSeconds: number;
+      if (speed === 0.5) backSeconds = 30;
+      else if (speed === 1) backSeconds = 60;
+      else if (speed === 2) backSeconds = 120;
+      else if (speed === 5) backSeconds = 300;
+      else if (speed === 10) backSeconds = 600;
+      else backSeconds = 60;
+
+      // SWaT datası saniyede 1 kayıt gibi, o yüzden
+      // "saniye" ≈ "satır" diyebiliriz:
+      const newIndex = Math.max(currentIndex - backSeconds, 0);
+
+      // 3) O index'e zıpla
+      await fetch(`${API_BASE}/control/jump/${newIndex}`, {
+        method: "POST",
+      });
+
+      // 4) Eğer pause'daysak otomatik play'e al
+      if (!isPlaying) {
+        setIsPlaying(true);
+        await fetch(`${API_BASE}/control/play`, { method: "POST" });
+      }
+    } catch (err) {
+      console.error("[ReplayControl] rewind error", err);
     }
   };
 
@@ -65,24 +140,29 @@ export const Overview: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Speed Control */}
-      <div className="flex justify-end">
-        <div className="w-80">
-          <SpeedControl
-            speed={speed}
-            onSpeedChange={handleSpeedChange}
-            isPlaying={isPlaying}
-            onPlayPause={handlePlayPause}
-          />
+    {/* Top row: Metric cards + Replay Control aynı satırda */}
+    <div className="flex gap-6 items-start">
+      {/* Sol: Metric cards */}
+      <div className="flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {sensors.map((sensor) => (
+            <MetricCard key={sensor.id} sensor={sensor} />
+          ))}
         </div>
       </div>
 
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {sensors.map((sensor) => (
-          <MetricCard key={sensor.id} sensor={sensor} />
-        ))}
+      {/* Sağ: Replay Control */}
+      <div className="w-80 shrink-0">
+        <SpeedControl
+          speed={speed}
+          onSpeedChange={handleSpeedChange}
+          isPlaying={isPlaying}
+          onPlayPause={handlePlayPause}
+          onReset={handleReset}
+          onRewind={handleRewind}
+        />
       </div>
+    </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

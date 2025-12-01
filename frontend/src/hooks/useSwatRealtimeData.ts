@@ -16,7 +16,7 @@ type BackendMessage = {
   index: number;
   timestamp: string;
   sensors: Record<string, number>;
-  label: number | null;
+  label: number | string | null;
   prediction: BackendPrediction;
 };
 
@@ -44,6 +44,7 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
   const [sensors, setSensors] = useState<SensorData[]>([]);
   const [events, setEvents] = useState<AnomalyEvent[]>([]);
   const [heatmapData, setHeatmapData] = useState<HeatmapData[]>([]);
+  const [currentTimestamp, setCurrentTimestamp] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const lastAttackRef = useRef<boolean>(false); // ardışık is_attack=true'larda event spam'i önlemek için
@@ -58,8 +59,9 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
 
     ws.onmessage = (event) => {
       const data: BackendMessage = JSON.parse(event.data);
-      console.log("[WS] message", data);
+      // console.log("[WS] message", data);
       const ts = new Date(data.timestamp);
+      setCurrentTimestamp(data.timestamp);
 
       // 1) Sensor kartları / trend verisi
       setSensors((prev) => {
@@ -157,7 +159,7 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
     };
   }, []);
 
-  return { sensors, events, heatmapData };
+  return { sensors, events, heatmapData, currentTimestamp };
 };
 
 // Sensör kartlarında kullanılacak status hesaplama fonksiyonu
