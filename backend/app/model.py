@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import torch
+import json
 import torch.nn as nn
 from pathlib import Path
 from sklearn.preprocessing import StandardScaler
@@ -16,6 +17,12 @@ from .config import (
     RECOMPUTE_SCALER_FROM_CSV_IF_MISSING,
     LABEL_COL,
     ANOMALY_THRESHOLD,
+    SENSOR_STATS_PATH,
+    Z_WARNING,
+    Z_CRITICAL,   
+    Z_MAX_FOR_INTENSITY,
+    APPLY_WINDOW_NORM,
+    WINDOW_NORM_EPS,
 )
 
 
@@ -115,6 +122,29 @@ def load_or_fit_scaler() -> StandardScaler | None:
 
 
 # ============================================================
+# 2) JSON yükleyici yardımcı fonksiyon
+# ============================================================
+
+def load_sensor_stats(path: Path) -> dict | None:
+    """
+    Notebook'tan gelen sensör hata istatistiklerini (JSON) yükler.
+    Yoksa None döner.
+    """
+    if not path.exists():
+        print(f"[SensorStats] Uyarı: Dosya bulunamadı: {path}")
+        return None
+
+    try:
+        with path.open("r") as f:
+            data = json.load(f)
+        print(f"[SensorStats] Yüklendi: {path}")
+        return data
+    except Exception as e:
+        print(f"[SensorStats] Okuma hatası: {e}")
+        return None
+
+
+# ============================================================
 # 3) Model state_dict yükleyici
 # ============================================================
 
@@ -170,6 +200,9 @@ class SwatVaeLstmModel:
         self.window_size = WINDOW_SIZE
         self.buffer: list[list[float]] = []
 
+        # sensör hata istatistikleri (JSON'dan)
+        self.sensor_stats: dict | None = load_sensor_stats(SENSOR_STATS_PATH)
+
     # ----------------- pencere güncelleme -------------------
 
     def update_window(self, row: dict):
@@ -182,30 +215,102 @@ class SwatVaeLstmModel:
         return len(self.buffer) == self.window_size
 
     # ----------------- inference / anomaly ------------------
-
+    
     @torch.no_grad()
     def predict(self):
         """
-        VAE-LSTM reconstruction error tabanlı anomaly score.
-        """
-        window = np.array(self.buffer, dtype=np.float32)
+        VAE-LSTM reconstruction error tabanlı anomaly score + sensör bazlı sapma.
 
-        # scaler varsa uygula
+        Normalizasyon pipeline'ı notebook ile birebir aynı:
+        1) Global StandardScaler
+        2) Her pencere için per-window z-score (zaman ekseni boyunca)
+        """
+
+        # self.buffer: [ [feat1,...,featN], ... ]  length = window_size
+        window = np.array(self.buffer, dtype=np.float32)  # (seq_len, feat)
+
+        # 1) Global scaler (notebook'ta X_train_scaled ile yaptığın)
         if self.scaler is not None:
             window = self.scaler.transform(window)
 
-        # modele uygun shape: (1, seq_len, input_dim)
-        x = torch.tensor(window, dtype=torch.float32, device=DEVICE).unsqueeze(0)
+        # 2) Per-window z-score normalizasyonu (WindowDataset.apply_window_norm=True ile aynı)
+        if APPLY_WINDOW_NORM:
+            mean = window.mean(axis=0, keepdims=True)               # (1, feat)
+            std = window.std(axis=0, keepdims=True, ddof=1) + WINDOW_NORM_EPS
+            window = (window - mean) / std
+
+        # İLERİDE:
+        # Notebook'ta per-window normalizasyonu kapatırsan, sadece
+        # config.py'de APPLY_WINDOW_NORM = False yapman yeterli olacak.
+
+        # 3) PyTorch tensöre çevir ve modele ver
+        x = torch.tensor(window, dtype=torch.float32, device=DEVICE).unsqueeze(0)  # (1, seq_len, feat)
 
         recon, mu, logvar = self.model(x)
 
-        # reconstruction error (MSE)
-        mse = torch.mean((x - recon) ** 2).item()
+        # 1) Global reconstruction error (MSE)
+        sq_err = (x - recon) ** 2  # (1, seq_len, feat)
+        mse = torch.mean(sq_err).item()
 
         anomaly_score = float(mse)
         is_attack = anomaly_score > ANOMALY_THRESHOLD
 
+        # 2) Sensör bazlı reconstruction error: (feat,)
+        # Zaman ve batch üzerinden ortalama
+        per_feat_mse_t = sq_err.mean(dim=(0, 1))  # (feat,)
+        per_feat_mse = per_feat_mse_t.detach().cpu().numpy()
+
+        per_feature_error: dict[str, float] = {}
+        per_feature_z: dict[str, float] = {}
+        per_feature_flag: dict[str, str] = {}
+        per_feature_intensity: dict[str, float] = {}
+
+        if self.sensor_stats is not None:
+            for i, col in enumerate(self.feature_cols):
+                err_val = float(per_feat_mse[i])
+                stats = self.sensor_stats.get(col)
+
+                # Eğer bu sensör stats dosyasında yoksa, atla
+                if not stats:
+                    continue
+
+                mu = float(stats.get("mean", 0.0))
+                sigma = float(stats.get("std", 0.0))
+                # Çok küçük sigma'larda patlamasın diye alt limite clamp
+                if sigma < 1e-8:
+                    sigma = 1e-8
+
+                z = (err_val - mu) / sigma
+
+                # seviye belirle
+                if z >= Z_CRITICAL:
+                    level = "critical"
+                elif z >= Z_WARNING:
+                    level = "warning"
+                else:
+                    level = "normal"
+
+                # Heatmap / intensity için 0–1'e sıkıştır
+                # 0 σ → 0, Z_MAX_FOR_INTENSITY σ ve üzeri → 1
+                if z <= 0:
+                    intensity = 0.0
+                else:
+                    intensity = min(z / Z_MAX_FOR_INTENSITY, 1.0)
+
+                per_feature_error[col] = err_val
+                per_feature_z[col] = float(z)
+                per_feature_flag[col] = level
+                per_feature_intensity[col] = float(intensity)
+
+        # 3) UI için dönecek yapı
         return {
             "anomaly_score": anomaly_score,
             "is_attack": is_attack,
+            # sensör bazlı bilgiler:
+            "per_feature_error": per_feature_error,         # ham MSE
+            "per_feature_z": per_feature_z,                 # kaç σ
+            "per_feature_flag": per_feature_flag,           # normal / warning / critical
+            "per_feature_intensity": per_feature_intensity, # 0–1, heatmap için ideal
         }
+
+

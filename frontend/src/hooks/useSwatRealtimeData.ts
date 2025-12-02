@@ -59,7 +59,7 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
 
     ws.onmessage = (event) => {
       const data: BackendMessage = JSON.parse(event.data);
-      // console.log("[WS] message", data);
+      console.log("[WS] message", data);
       const ts = new Date(data.timestamp);
       setCurrentTimestamp(data.timestamp);
 

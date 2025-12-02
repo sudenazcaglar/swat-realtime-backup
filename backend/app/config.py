@@ -21,6 +21,25 @@ MODEL_FILENAME = "vae_lstm_swat_stage4.pt"
 CSV_PATH = DATA_DIR / CSV_FILENAME
 MODEL_PATH = MODELS_DIR / MODEL_FILENAME
 
+
+# ==============================
+#  Sensör hata istatistikleri (VAE-LSTM)
+# ==============================
+
+# Notebook'ta ürettiğin dosyanın adı:
+SENSOR_STATS_FILENAME = "sensor_error_stats_v05.json"
+
+# Bu dosyayı backend/models klasörüne koyduğunu varsayıyoruz
+SENSOR_STATS_PATH = MODELS_DIR / SENSOR_STATS_FILENAME
+
+# Z-skor tabanlı seviye threshold'ları
+Z_WARNING: float = 2.0    # 2σ üstü = warning
+Z_CRITICAL: float = 3.0   # 3σ üstü = critical
+
+# Z-skorunu 0–1 aralığına sıkıştırmak için maks. kabul ettiğimiz sapma
+Z_MAX_FOR_INTENSITY: float = 5.0  # 5σ ve üstünü "1.0" kabul et
+
+
 # ==============================
 #  Veri / feature ayarları
 # ==============================
@@ -98,6 +117,18 @@ SCALER_PATH = MODELS_DIR / SCALER_FILENAME
 
 # True: SCALER_PATH yoksa backend açılırken CSV'den yeniden fit et
 RECOMPUTE_SCALER_FROM_CSV_IF_MISSING: bool = True
+
+# ==============================
+#  Model input normalizasyon ayarları
+# ==============================
+
+# Notebook'ta WindowDataset(apply_window_norm=True) kullanıyorsun.
+# Backend'de de aynı pipeline'ı uygulamak için bunu True bırak.
+# İleride per-window z-score normalizasyonu kapatırsan burayı False yapacaksın.
+APPLY_WINDOW_NORM: bool = True
+
+# Per-window z-normalizasyonunda kullanılan küçük epsilon
+WINDOW_NORM_EPS: float = 1e-6
 
 # ==============================
 #  Anomali skoru / threshold
