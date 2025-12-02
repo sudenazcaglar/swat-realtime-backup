@@ -10,6 +10,12 @@ const WS_URL =
 type BackendPrediction = {
   anomaly_score: number;
   is_attack: boolean;
+
+  // backend/model.py'den gelen yeni alanlar:
+  per_feature_error?: Record<string, number>;
+  per_feature_z?: Record<string, number>;
+  per_feature_flag?: Record<string, "normal" | "warning" | "critical">;
+  per_feature_intensity?: Record<string, number>;
 } | null;
 
 type BackendMessage = {
@@ -68,6 +74,8 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
         const map = new Map<string, SensorData>();
         prev.forEach((s) => map.set(s.id, s));
 
+        const perFeatureFlag = data.prediction?.per_feature_flag ?? {};
+
         SENSOR_META.forEach((meta) => {
           const existing = map.get(meta.id);
 
@@ -88,11 +96,23 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
             ? [...existing.trend, rawValue].slice(-MAX_TREND_LENGTH)
             : [rawValue];
 
+          const modelFlag = perFeatureFlag[meta.id];
+
+          const status: "normal" | "warning" | "critical" =
+            modelFlag === "normal" ||
+            modelFlag === "warning" ||
+            modelFlag === "critical"
+              ? modelFlag
+              : // sadece anomaly_score pseudo-sensörü için eski threshold'u kullanıyoruz
+                meta.id === "anomaly_score"
+                ? determineStatus(meta.id, rawValue)
+                : "normal";
+
           map.set(meta.id, {
             ...meta,
             value: rawValue,
             trend,
-            status: determineStatus(meta.id, rawValue),
+            status,
           });
         });
 
@@ -131,14 +151,21 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
 
       // 3) Heatmap verisi
       setHeatmapData((prev) => {
-        const newRows: HeatmapData[] = Object.entries(data.sensors).map(
-          ([sensor, value]) => ({
+        const perFeatureIntensity = data.prediction?.per_feature_intensity ?? {};
+        const perFeatureFlag = data.prediction?.per_feature_flag ?? {};
+
+        const newRows: HeatmapData[] = Object.keys(data.sensors).map((sensor) => {
+          const intensity = perFeatureIntensity[sensor] ?? 0;
+          const flag = perFeatureFlag[sensor];
+          const anomaly = flag === "critical";
+
+          return {
             sensor,
             time: ts.toISOString(),
-            value,
-            anomaly: isAttack,
-          })
-        );
+            value: intensity,  // 0–1 arası, z-score'dan geliyor
+            anomaly,           // sadece critical olanlar kırmızı
+          };
+        });
 
         const merged = [...prev, ...newRows];
         return merged.slice(-2000); // hafızayı şişirmemek için limit
