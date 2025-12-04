@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "./components/Layout";
 import { Overview } from "./pages/Overview";
 import { Control } from "./pages/Control";
+import { HeatmapPage } from "./pages/HeatmapPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { NavigationItem } from "./types";
 
@@ -40,11 +41,7 @@ function App() {
 
       case "xai":
         return (
-          <PlaceholderPage
-            title="Explainable AI"
-            description="XAI ekranı henüz implement edilmedi. Burada model açıklamaları ve feature importance görselleştirilecek."
-          />
-        );
+          <HeatmapPage />);
 
       case "chat":
         return (

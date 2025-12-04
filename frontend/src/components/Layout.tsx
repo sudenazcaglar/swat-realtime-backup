@@ -16,14 +16,17 @@ interface LayoutProps {
   timeLabel?: string; // replay timestamp buradan gelecek
 }
 
-const navItems: { id: NavigationItem; icon: React.ElementType; label: string }[] =
-  [
-    { id: "overview", icon: LayoutDashboard, label: "Overview" },
-    { id: "control", icon: Activity, label: "Control" },
-    { id: "logs", icon: FileText, label: "Logs" },
-    { id: "xai", icon: Brain, label: "XAI" },
-    { id: "chat", icon: MessageSquare, label: "Chat" },
-  ];
+const navItems: {
+  id: NavigationItem;
+  icon: React.ElementType;
+  label: string;
+}[] = [
+  { id: "overview", icon: LayoutDashboard, label: "Overview" },
+  { id: "control", icon: Activity, label: "Control" },
+  { id: "logs", icon: FileText, label: "Logs" },
+  { id: "xai", icon: Brain, label: "XAI" },
+  { id: "chat", icon: MessageSquare, label: "Chat" },
+];
 
 const pageTitles: Record<NavigationItem, string> = {
   overview: "SWaT Digital Twin – Anomaly Detection",
@@ -46,12 +49,12 @@ export const Layout: React.FC<LayoutProps> = ({
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
       {/* Sidebar */}
-      <div className="w-20 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-6">
+      <div className="w-20 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-4">
         <div className="mb-8">
           <Activity className="w-8 h-8 text-cyan-400" />
         </div>
 
-        <div className="flex-1 flex flex-col items-center space-y-4 mt-6">
+        <div className="flex-1 flex flex-col items-center space-y-4 mt-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -82,9 +85,7 @@ export const Layout: React.FC<LayoutProps> = ({
         {/* Top bar */}
         <header className="h-16 border-b border-gray-800 px-6 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <h1 className="text-lg font-semibold">
-              {pageTitles[currentPage]}
-            </h1>
+            <h1 className="text-lg font-semibold">{pageTitles[currentPage]}</h1>
           </div>
 
           <div className="flex items-center space-x-6">

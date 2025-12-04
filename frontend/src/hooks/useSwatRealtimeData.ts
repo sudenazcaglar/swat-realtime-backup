@@ -104,9 +104,9 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
             modelFlag === "critical"
               ? modelFlag
               : // sadece anomaly_score pseudo-sensörü için eski threshold'u kullanıyoruz
-                meta.id === "anomaly_score"
-                ? determineStatus(meta.id, rawValue)
-                : "normal";
+              meta.id === "anomaly_score"
+              ? determineStatus(meta.id, rawValue)
+              : "normal";
 
           map.set(meta.id, {
             ...meta,
@@ -151,21 +151,31 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
 
       // 3) Heatmap verisi
       setHeatmapData((prev) => {
-        const perFeatureIntensity = data.prediction?.per_feature_intensity ?? {};
+        const perFeatureIntensity =
+          data.prediction?.per_feature_intensity ?? {};
         const perFeatureFlag = data.prediction?.per_feature_flag ?? {};
+        const perFeatureZ = data.prediction?.per_feature_z ?? {};
 
-        const newRows: HeatmapData[] = Object.keys(data.sensors).map((sensor) => {
-          const intensity = perFeatureIntensity[sensor] ?? 0;
-          const flag = perFeatureFlag[sensor];
-          const anomaly = flag === "critical";
+        const timeKey = ts.toLocaleTimeString(); // şu an kullandığın format
 
-          return {
-            sensor,
-            time: ts.toISOString(),
-            value: intensity,  // 0–1 arası, z-score'dan geliyor
-            anomaly,           // sadece critical olanlar kırmızı
-          };
-        });
+        const newRows: HeatmapData[] = Object.keys(data.sensors).map(
+          (sensor) => {
+            const intensity = perFeatureIntensity[sensor] ?? 0;
+            const flag = perFeatureFlag[sensor];
+            const anomaly = flag === "critical";
+
+            const z = perFeatureZ[sensor] ?? 0;
+
+            return {
+              sensor,
+              time: timeKey, //toISOString(),
+              value: intensity, // 0–1 arası, z-score'dan geliyor
+              anomaly, // sadece critical olanlar kırmızı
+              zScore: z,          // tooltip için
+              flag,               // tooltip için
+            };
+          }
+        );
 
         const merged = [...prev, ...newRows];
         return merged.slice(-2000); // hafızayı şişirmemek için limit
