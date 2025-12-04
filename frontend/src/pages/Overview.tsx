@@ -36,13 +36,8 @@ export const Overview: React.FC<OverviewProps> = ({ onTimeLabelChange }) => {
   const [isPlaying, setIsPlaying] = useState(true);
 
   // 🔹 Artık global context'ten alıyoruz
-  const {
-    sensors,
-    events,
-    heatmapData,
-    currentTimestamp,
-    setPlaybackSpeed,
-  } = useSwatRealtime();
+  const { sensors, events, heatmapData, currentTimestamp, setPlaybackSpeed } =
+    useSwatRealtime();
 
   // 🔹 isPlaying / speed değiştikçe global playbackSpeed'i güncelle
   useEffect(() => {
@@ -152,29 +147,29 @@ export const Overview: React.FC<OverviewProps> = ({ onTimeLabelChange }) => {
 
   return (
     <div className="space-y-6">
-    {/* Top row: Metric cards + Replay Control aynı satırda */}
-    <div className="flex gap-6 items-start">
-      {/* Sol: Metric cards */}
-      <div className="flex-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {sensors.map((sensor) => (
-            <MetricCard key={sensor.id} sensor={sensor} />
-          ))}
+      {/* Top row: Metric cards + Replay Control aynı satırda */}
+      <div className="flex gap-6 items-start">
+        {/* Sol: Metric cards */}
+        <div className="flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {sensors.map((sensor) => (
+              <MetricCard key={sensor.id} sensor={sensor} />
+            ))}
+          </div>
+        </div>
+
+        {/* Sağ: Replay Control */}
+        <div className="w-80 shrink-0">
+          <SpeedControl
+            speed={speed}
+            onSpeedChange={handleSpeedChange}
+            isPlaying={isPlaying}
+            onPlayPause={handlePlayPause}
+            onReset={handleReset}
+            onRewind={handleRewind}
+          />
         </div>
       </div>
-
-      {/* Sağ: Replay Control */}
-      <div className="w-80 shrink-0">
-        <SpeedControl
-          speed={speed}
-          onSpeedChange={handleSpeedChange}
-          isPlaying={isPlaying}
-          onPlayPause={handlePlayPause}
-          onReset={handleReset}
-          onRewind={handleRewind}
-        />
-      </div>
-    </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
