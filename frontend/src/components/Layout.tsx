@@ -54,7 +54,8 @@ export const Layout: React.FC<LayoutProps> = ({
           <Activity className="w-8 h-8 text-cyan-400" />
         </div>
 
-        <div className="flex-1 flex flex-col items-center space-y-4 mt-2">
+        <div className="flex-1 flex flex-col items-center space-y-5 mt-1
+        ">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -69,15 +70,15 @@ export const Layout: React.FC<LayoutProps> = ({
                 }`}
                 title={item.label}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-6 h-6" />
               </button>
             );
           })}
         </div>
 
-        <button className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+        {/* <button className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
           <Settings className="w-5 h-5" />
-        </button>
+        </button> */}
       </div>
 
       {/* Main content */}

@@ -156,29 +156,64 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
         const perFeatureFlag = data.prediction?.per_feature_flag ?? {};
         const perFeatureZ = data.prediction?.per_feature_z ?? {};
 
-        const timeKey = ts.toLocaleTimeString(); // şu an kullandığın format
+        // 🔸 30 saniyelik zaman bucket'ı
+        const bucketMs = 30_000; // 30 saniye
+        const bucketTime =
+          Math.floor(ts.getTime() / bucketMs) * bucketMs;
 
-        const newRows: HeatmapData[] = Object.keys(data.sensors).map(
-          (sensor) => {
-            const intensity = perFeatureIntensity[sensor] ?? 0;
-            const flag = perFeatureFlag[sensor];
-            const anomaly = flag === "critical";
+        const bucketDate = new Date(bucketTime);
 
-            const z = perFeatureZ[sensor] ?? 0;
+        // const timeKey = ts.toLocaleTimeString(); // bucket kurmak için kaldırdık
 
-            return {
-              sensor,
-              time: timeKey, //toISOString(),
-              value: intensity, // 0–1 arası, z-score'dan geliyor
-              anomaly, // sadece critical olanlar kırmızı
-              zScore: z,          // tooltip için
-              flag,               // tooltip için
-            };
-          }
+        const timeKey = bucketDate.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+
+        // Bu 30 saniyelik dilim için tüm sensörlerin satırlarını oluştur
+        const newRows: HeatmapData[] = Object.keys(data.sensors).map((sensor) => {
+          const intensity = perFeatureIntensity[sensor] ?? 0;
+          const flag = perFeatureFlag[sensor];
+          const anomaly = flag === "critical";
+          const z = perFeatureZ[sensor] ?? 0;
+
+          return {
+            sensor,
+            time: timeKey,
+            value: intensity, // 0–1, heatmap rengi için
+            anomaly,          // sadece critical olanlar kırmızı
+            zScore: z,
+            flag,
+          };
+        });
+
+        // Önce eski + yeni veriyi birleştir
+        const merged = [...prev, ...newRows];
+
+        // 🔸 Tüm timeKey'ler içinden benzersiz zamanları sırayla al
+        const uniqueTimes = Array.from(
+          new Set(merged.map((d) => d.time))
         );
 
-        const merged = [...prev, ...newRows];
-        return merged.slice(-2000); // hafızayı şişirmemek için limit
+        // Maksimum 19 farklı zaman dilimi tutmak istiyoruz
+        const MAX_TIME_BUCKETS = 19;
+
+        if (uniqueTimes.length <= MAX_TIME_BUCKETS) {
+          return merged;
+        }
+
+        // Sadece son 19 zaman dilimini tut
+        const allowedTimes = new Set(
+          uniqueTimes.slice(-MAX_TIME_BUCKETS)
+        );
+
+        const trimmed = merged.filter((d) =>
+          allowedTimes.has(d.time)
+        );
+
+        return trimmed;
       });
     };
 
