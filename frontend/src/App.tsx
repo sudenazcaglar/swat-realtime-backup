@@ -5,6 +5,8 @@ import { Control } from "./pages/Control";
 import { HeatmapPage } from "./pages/HeatmapPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { NavigationItem } from "./types";
+import { SwatRealtimeProvider } from "./context/SwatRealtimeContext.tsx";
+
 
 function App() {
   const [currentPage, setCurrentPage] = useState<NavigationItem>("overview");
@@ -57,13 +59,15 @@ function App() {
   };
 
   return (
-    <Layout
-      currentPage={currentPage}
-      onNavigate={setCurrentPage}
-      timeLabel={replayTimeLabel}
-    >
-      {renderPage()}
-    </Layout>
+    <SwatRealtimeProvider>
+      <Layout
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+        timeLabel={replayTimeLabel}
+      >
+        {renderPage()}
+      </Layout>
+    </SwatRealtimeProvider>
   );
 }
 

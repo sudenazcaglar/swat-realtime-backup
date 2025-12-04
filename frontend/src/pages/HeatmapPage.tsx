@@ -1,10 +1,11 @@
 // src/pages/HeatmapPage.tsx
 import React from "react";
 import { Heatmap } from "../components/Dashboard/Heatmap";
-import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
+import { useSwatRealtime } from "../context/SwatRealtimeContext";
+// import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
 
 export const HeatmapPage: React.FC = () => {
-  const { heatmapData } = useSwatRealtimeData();
+  const { heatmapData } = useSwatRealtime();
 
   return (
     <div className="h-full">

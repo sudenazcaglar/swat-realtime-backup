@@ -5,7 +5,8 @@ import { AnomalyChart } from "../components/Dashboard/AnomalyChart";
 import { Heatmap } from "../components/Dashboard/Heatmap";
 import { EventLog } from "../components/Dashboard/EventLog";
 import { SpeedControl } from "../components/Dashboard/SpeedControl";
-import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
+import { useSwatRealtime } from "../context/SwatRealtimeContext";
+// import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
 // import { useSimulatedData } from "../hooks/useSimulatedData";
 
 const API_BASE =
@@ -34,8 +35,19 @@ export const Overview: React.FC<OverviewProps> = ({ onTimeLabelChange }) => {
   const [speed, setSpeed] = useState(1);
   const [isPlaying, setIsPlaying] = useState(true);
 
-  const { sensors, events, heatmapData, currentTimestamp } =
-    useSwatRealtimeData(isPlaying ? speed : 0);
+  // 🔹 Artık global context'ten alıyoruz
+  const {
+    sensors,
+    events,
+    heatmapData,
+    currentTimestamp,
+    setPlaybackSpeed,
+  } = useSwatRealtime();
+
+  // 🔹 isPlaying / speed değiştikçe global playbackSpeed'i güncelle
+  useEffect(() => {
+    setPlaybackSpeed(isPlaying ? speed : 0);
+  }, [isPlaying, speed, setPlaybackSpeed]);
 
   // Replay timestamp'i üst seviyeye bildir (Layout sağ üst için)
   useEffect(() => {
