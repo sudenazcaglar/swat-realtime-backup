@@ -12,31 +12,31 @@ import { useSwatRealtime } from "../context/SwatRealtimeContext";
 const API_BASE =
   (import.meta as any).env?.VITE_BACKEND_HTTP_URL ?? "http://localhost:8000";
 
-const formatTimestamp = (ts: string | null) => {
-  if (!ts) return "—";
+// const formatTimestamp = (ts: string | null) => {
+//   if (!ts) return "—";
 
-  const date = new Date(ts);
+//   const date = new Date(ts);
 
-  return date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-};
+//   return date.toLocaleString("en-US", {
+//     year: "numeric",
+//     month: "long",
+//     day: "2-digit",
+//     hour: "2-digit",
+//     minute: "2-digit",
+//     second: "2-digit",
+//   });
+// };
 
 interface OverviewProps {
   onTimeLabelChange?: (label: string | undefined) => void;
 }
 
-export const Overview: React.FC<OverviewProps> = ({ onTimeLabelChange }) => {
+export const Overview: React.FC<OverviewProps> = () => {
   const [speed, setSpeed] = useState(1);
   const [isPlaying, setIsPlaying] = useState(true);
 
   // 🔹 Artık global context'ten alıyoruz
-  const { sensors, events, heatmapData, currentTimestamp, setPlaybackSpeed } =
+  const { sensors, events, heatmapData, setPlaybackSpeed } =
     useSwatRealtime();
 
   // 🔹 isPlaying / speed değiştikçe global playbackSpeed'i güncelle
@@ -45,15 +45,15 @@ export const Overview: React.FC<OverviewProps> = ({ onTimeLabelChange }) => {
   }, [isPlaying, speed, setPlaybackSpeed]);
 
   // Replay timestamp'i üst seviyeye bildir (Layout sağ üst için)
-  useEffect(() => {
-    if (onTimeLabelChange) {
-      const label =
-        currentTimestamp != null
-          ? formatTimestamp(currentTimestamp)
-          : undefined;
-      onTimeLabelChange(label);
-    }
-  }, [currentTimestamp, onTimeLabelChange]);
+  // useEffect(() => {
+  //   if (onTimeLabelChange) {
+  //     const label =
+  //       currentTimestamp != null
+  //         ? formatTimestamp(currentTimestamp)
+  //         : undefined;
+  //     onTimeLabelChange(label);
+  //   }
+  // }, [currentTimestamp, onTimeLabelChange]);
 
   const handlePlayPause = async () => {
     const next = !isPlaying;

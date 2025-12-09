@@ -10,7 +10,7 @@ import { SwatRealtimeProvider } from "./context/SwatRealtimeContext.tsx";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<NavigationItem>("overview");
-  const [replayTimeLabel, setReplayTimeLabel] = useState<string | undefined>();
+  // const [replayTimeLabel, setReplayTimeLabel] = useState<string | undefined>();
 
   // Sayfa başlığını güncelle
   useEffect(() => {
@@ -28,7 +28,7 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case "overview":
-        return <Overview onTimeLabelChange={setReplayTimeLabel} />;
+        return <Overview/>;
 
       case "control":
         return <Control />;
@@ -54,7 +54,7 @@ function App() {
         );
 
       default:
-        return <Overview onTimeLabelChange={setReplayTimeLabel} />;
+        return <Overview/>;
     }
   };
 
@@ -63,7 +63,7 @@ function App() {
       <Layout
         currentPage={currentPage}
         onNavigate={setCurrentPage}
-        timeLabel={replayTimeLabel}
+        // timeLabel={replayTimeLabel}
       >
         {renderPage()}
       </Layout>

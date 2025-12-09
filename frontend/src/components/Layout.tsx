@@ -1,19 +1,20 @@
 import React from "react";
 import {
   LayoutDashboard,
-  Settings,
   FileText,
   Brain,
   MessageSquare,
   Activity,
+  // Settings,
 } from "lucide-react";
 import { NavigationItem } from "../types";
+import { useSwatRealtime } from "../context/SwatRealtimeContext";
 
 interface LayoutProps {
   children: React.ReactNode;
   currentPage: NavigationItem;
   onNavigate: (page: NavigationItem) => void;
-  timeLabel?: string; // replay timestamp buradan gelecek
+  // timeLabel?: string; // replay timestamp buradan gelecek
 }
 
 const navItems: {
@@ -40,11 +41,30 @@ export const Layout: React.FC<LayoutProps> = ({
   children,
   currentPage,
   onNavigate,
-  timeLabel,
+  // timeLabel,
 }) => {
   // Eğer üstten replay zamanı gelmemişse, yedek olarak gerçek saati göster
-  const fallbackTime = new Date().toLocaleTimeString();
-  const displayTime = timeLabel ?? fallbackTime;
+  const { currentTimestamp } = useSwatRealtime();
+
+  // Overview'deki formatTimestamp ile birebir aynı format
+  const displayTime =
+    currentTimestamp != null
+      ? new Date(currentTimestamp).toLocaleString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      : new Date().toLocaleString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
