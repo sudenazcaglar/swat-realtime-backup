@@ -102,8 +102,18 @@ export const TrendChart: React.FC<TrendChartProps> = ({
     };
   });
 
-  // X-axis ticks (show every 4th label)
-  const xTickIndices = Array.from({ length: Math.ceil(timeLabels.length / 4) }, (_, i) => i * 4);
+  // X-axis ticks: sabit maksimum etiket sayısı (örneğin 12)
+  const MAX_X_TICKS = 12;
+  const labelCount = timeLabels.length;
+  const xTickCount = Math.min(MAX_X_TICKS, labelCount);
+
+  const xTickStep =
+    xTickCount > 1 ? (labelCount - 1) / (xTickCount - 1) : 1;
+
+  const xTickIndices = Array.from(
+    { length: xTickCount },
+    (_, i) => Math.round(i * xTickStep)
+  );
 
   return (
     <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 h-full flex flex-col">
@@ -113,7 +123,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
         <svg width={dimensions.width} height={dimensions.height} className="w-full h-full">
           {/* Definitions */}
           <defs>
-            <pattern id={`grid-${title.replace(/\s+/g, '-')}`} width="40\" height="30\" patternUnits="userSpaceOnUse">
+            <pattern id={`grid-${title.replace(/\s+/g, '-')}`} width="40" height="30" patternUnits="userSpaceOnUse">
               <path 
                 d="M 40 0 L 0 0 0 30" 
                 fill="none" 
@@ -187,7 +197,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
           {/* X-axis labels */}
           {xTickIndices.map((index) => {
             if (index >= timeLabels.length) return null;
-            const x = padding.left + (index / (timeLabels.length - 1)) * innerWidth;
+            const x = padding.left + (index / (timeLabels.length - 1 || 1)) * innerWidth;
             return (
               <text
                 key={index}
@@ -269,7 +279,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
                 
                 {/* Data points */}
                 {sensor.trend.map((value, pointIndex) => {
-                  const x = padding.left + (pointIndex / (sensor.trend.length - 1)) * innerWidth;
+                  const x = padding.left + (pointIndex / (sensor.trend.length - 1 || 1)) * innerWidth;
                   const y = padding.top + (1 - (value - minValue) / range) * innerHeight;
                   
                   return (
