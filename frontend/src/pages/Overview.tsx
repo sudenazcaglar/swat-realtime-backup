@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { MetricCard } from "../components/Dashboard/MetricCard";
 import { TrendChart } from "../components/Dashboard/TrendChart";
 import { AnomalyChart } from "../components/Dashboard/AnomalyChart";
-import { Heatmap } from "../components/Dashboard/Heatmap";
-import { EventLog } from "../components/Dashboard/EventLog";
+// import { Heatmap } from "../components/Dashboard/Heatmap";
+// import { EventLog } from "../components/Dashboard/EventLog";
 import { SpeedControl } from "../components/Dashboard/SpeedControl";
 import { useSwatRealtime } from "../context/SwatRealtimeContext";
 // import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
@@ -36,8 +36,7 @@ export const Overview: React.FC<OverviewProps> = () => {
   const [isPlaying, setIsPlaying] = useState(true);
 
   // 🔹 Artık global context'ten alıyoruz
-  const { sensors, events, heatmapData, setPlaybackSpeed } =
-    useSwatRealtime();
+  const { sensors, setPlaybackSpeed } = useSwatRealtime();
 
   // 🔹 isPlaying / speed değiştikçe global playbackSpeed'i güncelle
   useEffect(() => {
@@ -194,10 +193,10 @@ export const Overview: React.FC<OverviewProps> = () => {
       )}
 
       {/* Event Log & Heatmap */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-        <EventLog events={events} />
-        <Heatmap data={heatmapData} />
-      </div>
+      {/* <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+        <EventLog events={events} /> */}
+        {/* <Heatmap data={heatmapData} /> */}
+      {/* </div> */}
     </div>
   );
 };

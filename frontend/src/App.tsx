@@ -6,7 +6,7 @@ import { HeatmapPage } from "./pages/HeatmapPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { NavigationItem } from "./types";
 import { SwatRealtimeProvider } from "./context/SwatRealtimeContext.tsx";
-
+import { Logs } from "./pages/Logs";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<NavigationItem>("overview");
@@ -28,22 +28,16 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case "overview":
-        return <Overview/>;
+        return <Overview />;
 
       case "control":
         return <Control />;
 
       case "logs":
-        return (
-          <PlaceholderPage
-            title="Logs"
-            description="Log ekranı henüz implement edilmedi. Burada sistem olay kayıtları ve geçmiş anomaliler gösterilecek."
-          />
-        );
+        return <Logs />;
 
       case "xai":
-        return (
-          <HeatmapPage />);
+        return <HeatmapPage />;
 
       case "chat":
         return (
@@ -54,7 +48,7 @@ function App() {
         );
 
       default:
-        return <Overview/>;
+        return <Overview />;
     }
   };
 

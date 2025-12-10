@@ -74,8 +74,10 @@ export const Layout: React.FC<LayoutProps> = ({
           <Activity className="w-8 h-8 text-cyan-400" />
         </div>
 
-        <div className="flex-1 flex flex-col items-center space-y-5 mt-1
-        ">
+        <div
+          className="flex-1 flex flex-col items-center space-y-5 mt-1
+        "
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
