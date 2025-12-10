@@ -41,10 +41,28 @@ export const TrendChart: React.FC<TrendChartProps> = ({
 
   // Calculate scales
   const allValues = sensors.flatMap(sensor => sensor.trend);
-  if (showThreshold && thresholdValue) allValues.push(thresholdValue);
-  const maxValue = Math.max(...allValues, 1);
-  const minValue = Math.min(...allValues, 0);
-  const range = maxValue - minValue || 1;
+  if (showThreshold && thresholdValue) {
+    allValues.push(thresholdValue);
+  }
+
+  let minValue = 0;
+  let maxValue = 1;
+
+  if (allValues.length > 0) {
+    const rawMin = Math.min(...allValues);
+    const rawMax = Math.max(...allValues);
+
+    const span = rawMax - rawMin || 1;
+    const paddingFactor = 0.1; // %10 boşluk
+
+    minValue = rawMin - span * paddingFactor;
+    maxValue = rawMax + span * paddingFactor;
+
+    // Eğer asla negatif görmek istemiyorsan (örneğin debi, seviye vb):
+    // minValue = Math.max(0, minValue);
+  }
+
+  const range = maxValue - minValue;
 
   // Generate time labels
   const generateTimeLabels = (count: number) => {
