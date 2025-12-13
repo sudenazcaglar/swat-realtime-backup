@@ -40,24 +40,25 @@ export const TrendChart: React.FC<TrendChartProps> = ({
   const colors = ['#06B6D4', '#F97316', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
 
   // -------------------------
-  // X ekseni için sabit pencere
+  // Sliding window (trend points)
   // -------------------------
-  // Bu değer: çizimdeki nokta sayısını ve tick aralıklarının piksel olarak sabit kalmasını sağlar.
-  // Veri uzadıkça eksen sıkışmaz; sadece içerik (çizim) pencere içinde kayar.
   const WINDOW_SIZE = 200;
 
-  const getWindow = <T,>(arr: T[], size: number) => {
-    // Padding YOK: veri azsa kendi uzunluğuyla çizilir (soldan başlar, sağa kadar dolar)
-    // Veri pencereyi geçtiyse son 'size' kadarını al (sliding window)
-    if (arr.length <= size) return arr;
-    return arr.slice(-size);
-  };
+  const getWindow = <T,>(arr: T[], size: number) => (arr.length <= size ? arr : arr.slice(-size));
 
-  // --- Y SCALE: dinamik min/max + küçük padding ---
-  const allValues = sensors.flatMap(sensor => sensor.trend);
-  if (showThreshold && thresholdValue) {
-    allValues.push(thresholdValue);
-  }
+  const formatTs = (ts: number) =>
+    new Date(ts).toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+  // -------------------------
+  // Y-scale: values üzerinden (TrendPoint.value)
+  // -------------------------
+  const allValues = sensors.flatMap(sensor => sensor.trend.map(p => p.value));
+  if (showThreshold && thresholdValue) allValues.push(thresholdValue);
 
   let minValue = 0;
   let maxValue = 1;
@@ -70,32 +71,19 @@ export const TrendChart: React.FC<TrendChartProps> = ({
 
     minValue = rawMin - span * paddingFactor;
     maxValue = rawMax + span * paddingFactor;
-
-    // İstersen negatifleri bastırmak için:
-    // minValue = Math.max(0, minValue);
   }
 
   const range = maxValue - minValue || 1;
 
-  // Generate time labels (şimdilik göreli zaman)
-  const generateTimeLabels = (count: number) => {
-    const now = new Date();
-    return Array.from({ length: count }, (_, i) => {
-      const time = new Date(now.getTime() - (count - 1 - i) * 2000);
-      return time.toLocaleTimeString('en-US', {
-        hour12: false,
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    });
-  };
+  // -------------------------
+  // X labels: gerçek timestamp'ler (TrendPoint.ts)
+  // -------------------------
+  const baseTrend = getWindow(sensors[0]?.trend ?? [], WINDOW_SIZE);
+  const timeLabels = baseTrend.map(p => formatTs(p.ts));
 
-  // timeLabels: window uzunluğuna göre üret (padding yok)
-  const rawLabels = generateTimeLabels(sensors[0]?.trend.length || 20);
-  const labelWindow = getWindow<string>(rawLabels, WINDOW_SIZE);
-  const timeLabels = labelWindow;
-
-  // --- Path helpers: WINDOW_SIZE sabit indeksleme ---
+  // -------------------------
+  // Paths
+  // -------------------------
   const createSmoothPath = (data: number[]) => {
     if (data.length < 2) return '';
     const denom = Math.max(data.length - 1, 1);
@@ -159,10 +147,11 @@ export const TrendChart: React.FC<TrendChartProps> = ({
     };
   });
 
-  // X-axis ticks: sabit maksimum etiket sayısı (sayı sabit, konumlar sabit)
+  // X-axis ticks: sabit sayıda tick, sabit konum (label içerikleri güncellenir)
   const MAX_X_TICKS = 12;
   const labelCount = timeLabels.length;
-  const xTickCount = Math.min(MAX_X_TICKS, Math.max(labelCount, 2)); // en az 2 gibi düşün
+  const xTickCount = Math.min(MAX_X_TICKS, Math.max(labelCount, 2));
+
   const xTickIndices = Array.from({ length: xTickCount }, (_, i) => {
     if (labelCount <= 1) return 0;
     const step = (labelCount - 1) / (xTickCount - 1);
@@ -177,7 +166,6 @@ export const TrendChart: React.FC<TrendChartProps> = ({
 
       <div ref={chartRef} className="flex-1 relative bg-gray-900 rounded-lg p-4">
         <svg width={dimensions.width} height={dimensions.height} className="w-full h-full">
-          {/* Definitions */}
           <defs>
             <pattern id={`grid-${titleSlug}`} width="40" height="30" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#374151" strokeWidth="1" opacity="0.2" />
@@ -192,25 +180,10 @@ export const TrendChart: React.FC<TrendChartProps> = ({
             </filter>
           </defs>
 
-          {/* Grid background */}
-          <rect
-            x={padding.left}
-            y={padding.top}
-            width={innerWidth}
-            height={innerHeight}
-            fill={`url(#grid-${titleSlug})`}
-          />
+          <rect x={padding.left} y={padding.top} width={innerWidth} height={innerHeight} fill={`url(#grid-${titleSlug})`} />
 
           {/* Axes */}
-          <line
-            x1={padding.left}
-            y1={padding.top}
-            x2={padding.left}
-            y2={padding.top + innerHeight}
-            stroke="#6B7280"
-            strokeWidth="2"
-          />
-
+          <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + innerHeight} stroke="#6B7280" strokeWidth="2" />
           <line
             x1={padding.left}
             y1={padding.top + innerHeight}
@@ -223,54 +196,33 @@ export const TrendChart: React.FC<TrendChartProps> = ({
           {/* Y-axis labels and grid lines */}
           {yTicks.map((tick, index) => (
             <g key={index}>
-              <line
-                x1={padding.left}
-                y1={tick.y}
-                x2={padding.left + innerWidth}
-                y2={tick.y}
-                stroke="#374151"
-                strokeWidth="1"
-                opacity="0.3"
-              />
-              <text
-                x={padding.left - 10}
-                y={tick.y + 4}
-                textAnchor="end"
-                fill="#9CA3AF"
-                fontSize="11"
-              >
+              <line x1={padding.left} y1={tick.y} x2={padding.left + innerWidth} y2={tick.y} stroke="#374151" strokeWidth="1" opacity="0.3" />
+              <text x={padding.left - 10} y={tick.y + 4} textAnchor="end" fill="#9CA3AF" fontSize="11">
                 {tick.value.toFixed(1)}
               </text>
             </g>
           ))}
 
-          {/* X-axis labels (konumlar WINDOW_SIZE'a göre sabit) */}
-          {xTickIndices.map((index, tickPos) => {
-            if (index >= timeLabels.length) return null;
+          {/* X-axis labels */}
+          {xTickIndices.map((dataIndex, tickPos) => {
+            if (dataIndex >= timeLabels.length) return null;
             const x = padding.left + (tickPos / Math.max(xTickCount - 1, 1)) * innerWidth;
             return (
               <text
-                key={index}
+                key={`${dataIndex}-${tickPos}`}
                 x={x}
                 y={padding.top + innerHeight + 20}
                 textAnchor="middle"
                 fill="#9CA3AF"
                 fontSize="10"
               >
-                {timeLabels[index]}
+                {timeLabels[dataIndex]}
               </text>
             );
           })}
 
           {/* Axis labels */}
-          <text
-            x={padding.left + innerWidth / 2}
-            y={dimensions.height - 10}
-            textAnchor="middle"
-            fill="#9CA3AF"
-            fontSize="12"
-            fontWeight="500"
-          >
+          <text x={padding.left + innerWidth / 2} y={dimensions.height - 10} textAnchor="middle" fill="#9CA3AF" fontSize="12" fontWeight="500">
             Time
           </text>
 
@@ -299,34 +251,26 @@ export const TrendChart: React.FC<TrendChartProps> = ({
                 strokeDasharray="8,4"
                 opacity="0.9"
               />
-              <text
-                x={padding.left + innerWidth + 10}
-                y={getThresholdY() + 4}
-                fill="#EF4444"
-                fontSize="11"
-                fontWeight="bold"
-              >
+              <text x={padding.left + innerWidth + 10} y={getThresholdY() + 4} fill="#EF4444" fontSize="11" fontWeight="bold">
                 {(thresholdValue * 100).toFixed(0)}%
               </text>
             </>
           )}
 
-          {/* Data lines + mini kart stili */}
+          {/* Data lines */}
           {sensors.map((sensor, index) => {
             const color = colors[index % colors.length];
 
-            // Trend window (padding yok): veri azsa soldan başlar ve sağa kadar dolar
-            const windowTrend = getWindow<number>(sensor.trend, WINDOW_SIZE);
+            const windowTrendPoints = getWindow(sensor.trend, WINDOW_SIZE);
+            const windowTrend = windowTrendPoints.map(p => p.value);
 
             const linePath = createSmoothPath(windowTrend);
             const areaPath = createAreaPath(windowTrend);
 
             return (
               <g key={sensor.id}>
-                {/* Alt renk alanı (mini kartlardaki efekt) */}
                 <path d={areaPath} fill={color} opacity="0.12" />
 
-                {/* Asıl çizgi */}
                 <path
                   d={linePath}
                   fill="none"
@@ -336,7 +280,6 @@ export const TrendChart: React.FC<TrendChartProps> = ({
                   className="transition-all duration-300"
                 />
 
-                {/* Veri noktaları (hover ile çıkan noktalar) */}
                 {windowTrend.map((value, pointIndex) => {
                   const denom = Math.max(windowTrend.length - 1, 1);
                   const x = padding.left + (pointIndex / denom) * innerWidth;
@@ -358,7 +301,6 @@ export const TrendChart: React.FC<TrendChartProps> = ({
                   );
                 })}
 
-                {/* Latest value indicator (şu anki değeri gösteren etiket) */}
                 {sensor.trend.length > 0 && (
                   <g>
                     <circle
@@ -376,25 +318,8 @@ export const TrendChart: React.FC<TrendChartProps> = ({
                         padding.top + (1 - (sensor.value - minValue) / range) * innerHeight - 10
                       })`}
                     >
-                      <rect
-                        x="-25"
-                        y="-12"
-                        width="50"
-                        height="24"
-                        fill="#1F2937"
-                        stroke={color}
-                        strokeWidth="1"
-                        rx="4"
-                        opacity="0.95"
-                      />
-                      <text
-                        x="0"
-                        y="4"
-                        textAnchor="middle"
-                        fill={color}
-                        fontSize="11"
-                        fontWeight="bold"
-                      >
+                      <rect x="-25" y="-12" width="50" height="24" fill="#1F2937" stroke={color} strokeWidth="1" rx="4" opacity="0.95" />
+                      <text x="0" y="4" textAnchor="middle" fill={color} fontSize="11" fontWeight="bold">
                         {sensor.value.toFixed(1)}
                       </text>
                     </g>

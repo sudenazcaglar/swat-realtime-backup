@@ -35,20 +35,18 @@ export const AnomalyChart: React.FC<AnomalyChartProps> = ({
   const innerWidth = dimensions.width - padding.left - padding.right;
   const innerHeight = dimensions.height - padding.top - padding.bottom;
 
-  // Generate time labels for x-axis
-  const generateTimeLabels = (count: number) => {
-    const now = new Date();
-    return Array.from({ length: count }, (_, i) => {
-      const time = new Date(now.getTime() - (count - 1 - i) * 2000);
-      return time.toLocaleTimeString('en-US', { 
-        hour12: false, 
-        minute: '2-digit', 
-        second: '2-digit' 
-      });
+  const formatTs = (ts: number) =>
+    new Date(ts).toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
     });
-  };
 
-  const timeLabels = generateTimeLabels(sensor.trend.length);
+  // Use real timestamps from TrendPoint[]
+  const timeLabels = sensor.trend.map(p => formatTs(p.ts));
+  const values = sensor.trend.map(p => p.value);
+
 
   // Create smooth curve path
   const createSmoothPath = (data: number[]) => {
@@ -279,7 +277,7 @@ export const AnomalyChart: React.FC<AnomalyChartProps> = ({
           {/* Anomaly score line with glow effect */}
           <path
             ref={pathRef}
-            d={createSmoothPath(sensor.trend)}
+            d={createSmoothPath(values)}
             fill="none"
             stroke="#06B6D4"
             strokeWidth="3"
@@ -288,8 +286,8 @@ export const AnomalyChart: React.FC<AnomalyChartProps> = ({
           />
           
           {/* Data points with tooltips */}
-          {sensor.trend.map((value, index) => {
-            const x = padding.left + (index / (sensor.trend.length - 1)) * innerWidth;
+          {values.map((value, index) => {
+            const x = padding.left + (index / (values.length - 1)) * innerWidth;
             const y = padding.top + (1 - value) * innerHeight;
             
             return (

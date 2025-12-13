@@ -92,9 +92,11 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
               ? backendValue
               : 0;
 
+          const point = { ts: ts.getTime(), value: rawValue };
+
           const trend = existing
-            ? [...existing.trend, rawValue].slice(-MAX_TREND_LENGTH)
-            : [rawValue];
+            ? [...existing.trend, point].slice(-MAX_TREND_LENGTH)
+            : [point];
 
           const modelFlag = perFeatureFlag[meta.id];
 

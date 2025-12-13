@@ -1,9 +1,14 @@
+export type TrendPoint = {
+  ts: number;      // epoch milliseconds
+  value: number;
+};
+
 export interface SensorData {
   id: string;
   name: string;
   value: number;
   unit: string;
-  trend: number[];
+  trend: TrendPoint[];
   status: "normal" | "warning" | "critical";
 }
 
