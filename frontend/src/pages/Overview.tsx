@@ -1,16 +1,15 @@
-import React, { useEffect, useState } from "react";
+// import React, { useEffect, useState } from "react";
 import { MetricCard } from "../components/Dashboard/MetricCard";
 import { TrendChart } from "../components/Dashboard/TrendChart";
 // import { AnomalyChart } from "../components/Dashboard/AnomalyChart";
 // import { Heatmap } from "../components/Dashboard/Heatmap";
 // import { EventLog } from "../components/Dashboard/EventLog";
-import { SpeedControl } from "../components/Dashboard/SpeedControl";
 import { useSwatRealtime } from "../context/SwatRealtimeContext";
 // import { useSwatRealtimeData } from "../hooks/useSwatRealtimeData";
 // import { useSimulatedData } from "../hooks/useSimulatedData";
 
-const API_BASE =
-  (import.meta as any).env?.VITE_BACKEND_HTTP_URL ?? "http://localhost:8000";
+// const API_BASE =
+//   (import.meta as any).env?.VITE_BACKEND_HTTP_URL ?? "http://localhost:8000";
 
 // const formatTimestamp = (ts: string | null) => {
 //   if (!ts) return "—";
@@ -32,16 +31,9 @@ interface OverviewProps {
 }
 
 export const Overview: React.FC<OverviewProps> = () => {
-  const [speed, setSpeed] = useState(1);
-  const [isPlaying, setIsPlaying] = useState(true);
 
   // 🔹 Artık global context'ten alıyoruz
-  const { sensors, setPlaybackSpeed } = useSwatRealtime();
-
-  // 🔹 isPlaying / speed değiştikçe global playbackSpeed'i güncelle
-  useEffect(() => {
-    setPlaybackSpeed(isPlaying ? speed : 0);
-  }, [isPlaying, speed, setPlaybackSpeed]);
+  const { sensors } = useSwatRealtime();
 
   // Replay timestamp'i üst seviyeye bildir (Layout sağ üst için)
   // useEffect(() => {
@@ -54,90 +46,7 @@ export const Overview: React.FC<OverviewProps> = () => {
   //   }
   // }, [currentTimestamp, onTimeLabelChange]);
 
-  const handlePlayPause = async () => {
-    const next = !isPlaying;
-    setIsPlaying(next);
-
-    try {
-      const endpoint = next ? "/control/play" : "/control/pause";
-      await fetch(`${API_BASE}${endpoint}`, { method: "POST" });
-    } catch (err) {
-      console.error("[ReplayControl] play/pause error", err);
-    }
-  };
-
-  const handleSpeedChange = async (newSpeed: number) => {
-    setSpeed(newSpeed);
-
-    const wasPaused = !isPlaying;
-    if (wasPaused) {
-      setIsPlaying(true);
-    }
-
-    try {
-      await fetch(`${API_BASE}/control/speed/${newSpeed}`, {
-        method: "POST",
-      });
-
-      if (wasPaused) {
-        await fetch(`${API_BASE}/control/play`, { method: "POST" });
-      }
-    } catch (err) {
-      console.error("[ReplayControl] speed change error", err);
-    }
-  };
-
-  const handleReset = async () => {
-    try {
-      // Baştan başlat
-      await fetch(`${API_BASE}/control/jump/0`, { method: "POST" });
-
-      // Pause durumundaysa otomatik play'e al
-      if (!isPlaying) {
-        setIsPlaying(true);
-        await fetch(`${API_BASE}/control/play`, { method: "POST" });
-      }
-    } catch (err) {
-      console.error("[ReplayControl] reset error", err);
-    }
-  };
-
-  const handleRewind = async () => {
-    try {
-      // 1) Mevcut index'i al
-      const res = await fetch(`${API_BASE}/status`);
-      const status = await res.json();
-      const currentIndex: number = status.current_index ?? 0;
-
-      // 2) Hıza göre geriye gidilecek süre (saniye)
-      let backSeconds: number;
-      if (speed === 0.5) backSeconds = 30;
-      else if (speed === 1) backSeconds = 60;
-      else if (speed === 2) backSeconds = 120;
-      else if (speed === 5) backSeconds = 300;
-      else if (speed === 10) backSeconds = 600;
-      else backSeconds = 60;
-
-      // SWaT datası saniyede 1 kayıt gibi, o yüzden
-      // "saniye" ≈ "satır" diyebiliriz:
-      const newIndex = Math.max(currentIndex - backSeconds, 0);
-
-      // 3) O index'e zıpla
-      await fetch(`${API_BASE}/control/jump/${newIndex}`, {
-        method: "POST",
-      });
-
-      // 4) Eğer pause'daysak otomatik play'e al
-      if (!isPlaying) {
-        setIsPlaying(true);
-        await fetch(`${API_BASE}/control/play`, { method: "POST" });
-      }
-    } catch (err) {
-      console.error("[ReplayControl] rewind error", err);
-    }
-  };
-
-    // Grafikler için sensör grupları (P1–P6)
+  // Grafikler için sensör grupları (P1–P6)
   const pickSensors = (ids: string[]) =>
     sensors.filter((s) => ids.includes(s.id));
 
@@ -180,18 +89,6 @@ export const Overview: React.FC<OverviewProps> = () => {
               <MetricCard key={sensor.id} sensor={sensor} />
             ))}
           </div>
-        </div>
-
-        {/* Sağ: Replay Control */}
-        <div className="w-80 shrink-0">
-          <SpeedControl
-            speed={speed}
-            onSpeedChange={handleSpeedChange}
-            isPlaying={isPlaying}
-            onPlayPause={handlePlayPause}
-            onReset={handleReset}
-            onRewind={handleRewind}
-          />
         </div>
       </div>
 
