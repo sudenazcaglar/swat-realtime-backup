@@ -5,7 +5,7 @@ import {
   Brain,
   MessageSquare,
   Activity,
-  // Settings,
+  Settings,
 } from "lucide-react";
 import { NavigationItem } from "../types";
 import { useSwatRealtime } from "../context/SwatRealtimeContext";
@@ -98,9 +98,9 @@ export const Layout: React.FC<LayoutProps> = ({
           })}
         </div>
 
-        {/* <button className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+        <button className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
           <Settings className="w-5 h-5" />
-        </button> */}
+        </button>
       </div>
 
       {/* Main content */}

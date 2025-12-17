@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { MetricCard } from "../components/Dashboard/MetricCard";
 import { TrendChart } from "../components/Dashboard/TrendChart";
-import { AnomalyChart } from "../components/Dashboard/AnomalyChart";
+// import { AnomalyChart } from "../components/Dashboard/AnomalyChart";
 // import { Heatmap } from "../components/Dashboard/Heatmap";
 // import { EventLog } from "../components/Dashboard/EventLog";
 import { SpeedControl } from "../components/Dashboard/SpeedControl";
@@ -137,12 +137,37 @@ export const Overview: React.FC<OverviewProps> = () => {
     }
   };
 
-  // Grafikler için sensör grupları
-  const flowSensors = sensors.filter((s) =>
-    ["fit101", "ait201"].includes(s.id)
-  );
-  const systemSensors = sensors.filter((s) => ["lit101"].includes(s.id));
-  const anomalySensors = sensors.filter((s) => s.id === "anomaly_score");
+    // Grafikler için sensör grupları (P1–P6)
+  const pickSensors = (ids: string[]) =>
+    sensors.filter((s) => ids.includes(s.id));
+
+  // P1 – Raw Water
+  const p1Sensors = pickSensors(["fit101", "lit101"]);
+
+  // P2 – Chemical Dosing
+  const p2Sensors = pickSensors(["ait201", "fit201", "ait203"]);
+
+  // P3 – Ultrafiltration
+  const p3Sensors = pickSensors(["fit301", "dpit301", "lit301"]);
+
+  // P4 – Dechlorination / RO Feed Tank
+  const p4Sensors = pickSensors(["ait401", "ait402", "lit401"]);
+
+  // P5 – Reverse Osmosis (fixed set)
+  const p5Sensors = pickSensors(["ait503", "ait504", "pit502"]);
+
+  // P6 – Backwash
+  const p6Sensors = pickSensors(["fit601"]);
+
+  // Anomaly
+  const anomalySensors = pickSensors(["anomaly_score"]);
+
+  // // Grafikler için sensör grupları
+  // const flowSensors = sensors.filter((s) =>
+  //   ["fit101", "ait201"].includes(s.id)
+  // );
+  // const systemSensors = sensors.filter((s) => ["lit101"].includes(s.id));
+  // const anomalySensors = sensors.filter((s) => s.id === "anomaly_score");
 
   return (
     <div className="space-y-6">
@@ -172,8 +197,12 @@ export const Overview: React.FC<OverviewProps> = () => {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <TrendChart title="Flow Rate & Conductivity" sensors={flowSensors} />
-        <TrendChart title="Temperature & Humidity" sensors={systemSensors} />
+        <TrendChart title="P1 – Raw Water (FIT101 & LIT101)" sensors={p1Sensors} />
+        <TrendChart title="P2 – Chemical Dosing (AIT201, FIT201, AIT203)" sensors={p2Sensors} />
+        <TrendChart title="P3 – Ultrafiltration (FIT301, DPIT301, LIT301)" sensors={p3Sensors} />
+        <TrendChart title="P4 – Dechlorination (AIT401, AIT402, LIT401)" sensors={p4Sensors} />
+        <TrendChart title="P5 – Reverse Osmosis (AIT503, AIT504, PIT502)" sensors={p5Sensors} />
+        <TrendChart title="P6 – Backwash (FIT601)" sensors={p6Sensors} />
       </div>
 
       {/* Anomaly Chart */}
@@ -186,11 +215,11 @@ export const Overview: React.FC<OverviewProps> = () => {
         />
       </div>
 
-      {anomalySensors.length > 0 && (
-        <div>
+      {/* {anomalySensors.length > 0 && ( */}
+        {/* <div>
           <AnomalyChart sensor={anomalySensors[0]} thresholdValue={0.8} />
         </div>
-      )}
+      )} */}
 
       {/* Event Log & Heatmap */}
       {/* <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">

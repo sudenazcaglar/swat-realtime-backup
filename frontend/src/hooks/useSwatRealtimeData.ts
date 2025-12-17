@@ -29,15 +29,34 @@ type BackendMessage = {
 // SWaT tarafında UI'da göstermek istediğin sensörler.
 // id'ler backend'den gelen "sensors" key'leri ile aynı olmalı.
 const SENSOR_META: Omit<SensorData, "value" | "trend">[] = [
-  { id: "lit101", name: "Tank Level LIT101", unit: "%", status: "normal" },
+  // P1 – Raw Water
   { id: "fit101", name: "Flow FIT101", unit: "m³/h", status: "normal" },
-  {
-    id: "ait201",
-    name: "Conductivity AIT201",
-    unit: "µS/cm",
-    status: "normal",
-  },
-  // buraya istediğin diğer SWaT sensörlerini ekleyebilirsin
+  { id: "lit101", name: "Tank Level LIT101", unit: "%", status: "normal" },
+
+  // P2 – Chemical Dosing
+  { id: "fit201", name: "Feed Flow FIT201", unit: "m³/h", status: "normal" },
+  { id: "ait201", name: "Conductivity AIT201", unit: "µS/cm", status: "normal" },
+  { id: "ait203", name: "ORP AIT203", unit: "mV", status: "normal" },
+
+  // P3 – Ultrafiltration
+  { id: "fit301", name: "UF Feed Flow FIT301", unit: "m³/h", status: "normal" },
+  { id: "dpit301", name: "UF Differential Pressure DPIT301", unit: "bar", status: "normal" },
+  { id: "lit301", name: "UF Feed Tank Level LIT301", unit: "%", status: "normal" },
+
+  // P4 – Dechlorination / RO Feed Tank
+  { id: "ait401", name: "Hardness AIT401", unit: "", status: "normal" },
+  { id: "ait402", name: "ORP AIT402", unit: "mV", status: "normal" },
+  { id: "lit401", name: "RO Feed Tank Level LIT401", unit: "%", status: "normal" },
+
+  // P5 – Reverse Osmosis
+  { id: "ait503", name: "RO Feed Conductivity AIT503", unit: "µS/cm", status: "normal" },
+  { id: "ait504", name: "RO Permeate Conductivity AIT504", unit: "µS/cm", status: "normal" },
+  { id: "pit502", name: "RO Pressure PIT502", unit: "bar", status: "normal" },
+
+  // P6 – Backwash
+  { id: "fit601", name: "Backwash Flow FIT601", unit: "m³/h", status: "normal" },
+
+  // Pseudo-sensor (model)
   { id: "anomaly_score", name: "Anomaly Score", unit: "", status: "normal" },
 ];
 
@@ -65,7 +84,7 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
 
     ws.onmessage = (event) => {
       const data: BackendMessage = JSON.parse(event.data);
-      console.log("[WS] message", data);
+      // console.log("[WS] message", data);
       const ts = new Date(data.timestamp);
       setCurrentTimestamp(data.timestamp);
 
