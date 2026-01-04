@@ -1,5 +1,4 @@
 // import React, { useEffect, useState } from "react";
-import { MetricCard } from "../components/Dashboard/MetricCard";
 import { TrendChart } from "../components/Dashboard/TrendChart";
 // import { AnomalyChart } from "../components/Dashboard/AnomalyChart";
 // import { Heatmap } from "../components/Dashboard/Heatmap";
@@ -80,18 +79,6 @@ export const Overview: React.FC<OverviewProps> = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top row: Metric cards + Replay Control aynı satırda */}
-      <div className="flex gap-6 items-start">
-        {/* Sol: Metric cards */}
-        <div className="flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {sensors.map((sensor) => (
-              <MetricCard key={sensor.id} sensor={sensor} />
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <TrendChart title="P1 – Raw Water (FIT101 & LIT101)" sensors={p1Sensors} />
