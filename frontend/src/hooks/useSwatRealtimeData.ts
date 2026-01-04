@@ -158,8 +158,8 @@ export const useSwatRealtimeData = (_speed: number = 1) => {
           timestamp: ts,
           severity,
           message: fromModelAttack
-            ? `Model detected anomaly (score = ${score.toFixed(3)})`
-            : "Ground-truth attack segment",
+            ? `Model detected anomaly`
+            : "Attack segment",
           sensor: "anomaly_score",
           value: score,
         };

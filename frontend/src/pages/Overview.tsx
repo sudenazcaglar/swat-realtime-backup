@@ -92,10 +92,9 @@ export const Overview: React.FC<OverviewProps> = () => {
       {/* Anomaly Chart */}
       <div className="grid grid-cols-1 gap-6">
         <TrendChart
-          title="Anomaly Score vs Threshold"
+          title="Anomaly Score"
           sensors={anomalySensors}
-          showThreshold={true}
-          thresholdValue={0.8}
+          showThreshold={false}
         />
       </div>
 

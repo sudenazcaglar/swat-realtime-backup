@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   FileText,
-  Brain,
+  Grid3x3,
   MessageSquare,
   Activity,
   Settings,
@@ -29,7 +29,7 @@ const navItems: NavItem[] = [
   { id: "overview", icon: LayoutDashboard, label: "Overview", kind: "page" },
   { id: "control", icon: Activity, label: "Control", kind: "page" },
   { id: "logs", icon: FileText, label: "Logs", kind: "page" },
-  { id: "xai", icon: Brain, label: "XAI", kind: "page" },
+  { id: "xai", icon: Grid3x3, label: "XAI", kind: "page" },
   { id: "chat", icon: MessageSquare, label: "Chat", kind: "page" },
   // ✅ Settings artık burada ve diğerleri gibi render edilecek
   { id: "settings", icon: Settings, label: "Settings", kind: "action" },
