@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   FileText,
   Grid3x3,
-  MessageSquare,
   Activity,
   Settings,
 } from "lucide-react";
@@ -30,7 +29,6 @@ const navItems: NavItem[] = [
   { id: "control", icon: Activity, label: "Control", kind: "page" },
   { id: "logs", icon: FileText, label: "Logs", kind: "page" },
   { id: "xai", icon: Grid3x3, label: "XAI", kind: "page" },
-  { id: "chat", icon: MessageSquare, label: "Chat", kind: "page" },
   // ✅ Settings artık burada ve diğerleri gibi render edilecek
   { id: "settings", icon: Settings, label: "Settings", kind: "action" },
 ];
@@ -43,7 +41,6 @@ const pageTitles: Record<NavigationItem, string> = {
   control: "SWaT Digital Twin – Control",
   logs: "SWaT Digital Twin – Logs",
   xai: "SWaT Digital Twin – Explainability",
-  chat: "SWaT Digital Twin – Chat",
 };
 
 export const Layout: React.FC<LayoutProps> = ({

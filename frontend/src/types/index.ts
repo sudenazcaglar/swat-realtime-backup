@@ -52,4 +52,4 @@ export interface HeatmapData {
   flag?: "normal" | "warning" | "critical"; // seviye
 }
 
-export type NavigationItem = "overview" | "control" | "logs" | "xai" | "chat";
+export type NavigationItem = "overview" | "control" | "logs" | "xai";

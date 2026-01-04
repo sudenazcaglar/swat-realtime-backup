@@ -3,7 +3,6 @@ import { Layout } from "./components/Layout";
 import { Overview } from "./pages/Overview";
 import { Control } from "./pages/Control";
 import { HeatmapPage } from "./pages/HeatmapPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { NavigationItem } from "./types";
 import { SwatRealtimeProvider } from "./context/SwatRealtimeContext.tsx";
 import { Logs } from "./pages/Logs";
@@ -19,7 +18,6 @@ function App() {
       control: "SWaT Digital Twin - Control",
       logs: "SWaT Digital Twin - Logs",
       xai: "SWaT Digital Twin - XAI",
-      chat: "SWaT Digital Twin - Chat",
     };
 
     document.title = titles[currentPage] ?? "SWaT Digital Twin";
@@ -38,14 +36,6 @@ function App() {
 
       case "xai":
         return <HeatmapPage />;
-
-      case "chat":
-        return (
-          <PlaceholderPage
-            title="Chat"
-            description="Chat ekranı henüz implement edilmedi. Burada operatör ile etkileşimli sohbet arayüzü yer alacak."
-          />
-        );
 
       default:
         return <Overview />;
